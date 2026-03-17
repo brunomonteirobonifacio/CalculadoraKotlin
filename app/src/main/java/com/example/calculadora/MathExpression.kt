@@ -1,7 +1,10 @@
 package com.example.calculadora
 
 class MathExpression {
-    val value: String
+    val values: List<Token>
+        get() = tokens
+
+    val strValue: String
         get() = tokens
             .map { it.symbol }
             .joinToString(separator = " ") { it }
@@ -23,7 +26,7 @@ class MathExpression {
 
         var accumulator = (tokens[0] as NumberToken).number
         var operator: OperatorToken? = null
-        var current: Int? = null
+        var current: Int?
 
         val iterator = tokens.iterator()
         iterator.next()

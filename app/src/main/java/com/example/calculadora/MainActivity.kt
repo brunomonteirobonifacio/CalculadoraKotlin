@@ -35,8 +35,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Home() {
     val expression = MathExpression(NumberToken(0))
-
-    val observableExpressionValue by remember { mutableStateOf(expression.tokens) }
+    val expressionStrValue by remember { mutableStateOf(expression.strValue) }
 
     Column(
         modifier = Modifier
@@ -51,7 +50,7 @@ fun Home() {
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ){
-            Text(fontSize = 50.sp, text = observableExpressionValue.toString())
+            Text(fontSize = 50.sp, text = expressionStrValue)
         }
 
         Row(
