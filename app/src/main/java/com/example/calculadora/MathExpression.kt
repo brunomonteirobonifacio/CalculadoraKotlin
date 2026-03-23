@@ -1,6 +1,6 @@
 package com.example.calculadora
 
-class MathExpression {
+class MathExpression(val tokens: MutableList<Token>) {
     val values: List<Token>
         get() = tokens
 
@@ -9,11 +9,11 @@ class MathExpression {
             .map { it.symbol }
             .joinToString(separator = " ") { it }
 
-    constructor(token: Token) {
+    constructor(token: Token) : this(mutableListOf()) {
         tokens.add(token)
     }
 
-    val tokens: MutableList<Token> = mutableListOf()
+    constructor(number: Int) : this(NumberToken(number))
 
     fun append(token: Token) {
         if (tokens.size < 3) tokens.add(token)

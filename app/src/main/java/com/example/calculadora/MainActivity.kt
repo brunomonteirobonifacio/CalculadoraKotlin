@@ -13,14 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.collections.joinToString
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,8 +34,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Home() {
-    val expression = MathExpression(NumberToken(0))
-    val expressionStrValue by remember { mutableStateOf(expression.strValue) }
+    val expressionList = remember { mutableStateListOf<Token>() }
+    val expression = MathExpression(expressionList)
 
     Column(
         modifier = Modifier
@@ -50,7 +50,7 @@ fun Home() {
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ){
-            Text(fontSize = 50.sp, text = expressionStrValue)
+            Text(fontSize = 50.sp, text = expression.strValue)
         }
 
         Row(
