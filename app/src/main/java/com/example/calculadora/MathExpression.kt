@@ -16,7 +16,38 @@ class MathExpression(val tokens: MutableList<Token>) {
     constructor(number: Int) : this(NumberToken(number))
 
     fun append(token: Token) {
-        if (tokens.size < 3) tokens.add(token)
+        when (token) {
+            is NumberToken -> addNumberToken(token)
+            is OperatorToken -> addOperatorToken(token)
+            else -> tokens.add(token)
+        }
+    }
+
+    private fun addNumberToken(token: NumberToken) {
+        if (tokens.isEmpty()) {
+            tokens.add(token)
+            return
+        }
+
+        val last = tokens.last()
+        if (last is NumberToken) {
+            println("CU")
+            tokens[tokens.lastIndex] = NumberToken((last.number * 10) + token.number)
+        } else {
+            tokens.add(token)
+        }
+    }
+
+    private fun addOperatorToken(token: OperatorToken) {
+        if (!tokens.isEmpty()) {
+            val last = tokens.last()
+            if (last is OperatorToken) {
+                tokens[tokens.lastIndex] = token
+                return
+            }
+        }
+
+        tokens.add(token)
     }
 
     fun clear() = tokens.clear()
@@ -39,6 +70,7 @@ class MathExpression(val tokens: MutableList<Token>) {
                 current = (token as NumberToken).number
 
                 accumulator = operator.exec(accumulator, current)
+                operator = null
             } else {
                 if (token is NumberToken) throw IllegalStateException("Invalid syntax")
                 operator = (token as OperatorToken)
