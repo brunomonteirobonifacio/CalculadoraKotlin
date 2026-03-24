@@ -5,9 +5,7 @@ class MathExpression(val tokens: MutableList<Token>) {
         get() = tokens
 
     val strValue: String
-        get() = tokens
-            .map { it.symbol }
-            .joinToString(separator = " ") { it }
+        get() = tokens.joinToString(separator = " ") { it.symbol }
 
     constructor(token: Token) : this(mutableListOf()) {
         tokens.add(token)
@@ -31,8 +29,7 @@ class MathExpression(val tokens: MutableList<Token>) {
 
         val last = tokens.last()
         if (last is NumberToken) {
-            println("CU")
-            tokens[tokens.lastIndex] = NumberToken((last.number * 10) + token.number)
+            tokens[tokens.lastIndex] = NumberToken((last.value * 10) + token.value)
         } else {
             tokens.add(token)
         }
@@ -55,44 +52,84 @@ class MathExpression(val tokens: MutableList<Token>) {
     fun calculate() {
         if (tokens.isEmpty()) return
 
-        var accumulator = (tokens[0] as NumberToken).number
-        var operator: OperatorToken? = null
-        var current: Int?
+        validateSyntax(tokens)
 
-        val iterator = tokens.iterator()
-        iterator.next()
-
-        while (iterator.hasNext()) {
-            val token = iterator.next()
-
-            if (operator != null) {
-                if (token is OperatorToken) throw IllegalStateException("Invalid syntax")
-                current = (token as NumberToken).number
-
-                accumulator = operator.exec(accumulator, current)
-                operator = null
-            } else {
-                if (token is NumberToken) throw IllegalStateException("Invalid syntax")
-                operator = (token as OperatorToken)
-                current = null
-            }
+        var result = tokens.toList()
+        while (canBeSimplified(result)) {
+            result = solveHighestPriority(result)
         }
 
         tokens.clear()
-        tokens.add(NumberToken(accumulator))
+        tokens.add(resultToNumberToken(result))
     }
+
+    private fun validateSyntax(tokens: List<Token>) {
+        if (tokens.size % 2 == 0) {
+            throw IllegalStateException("Invalid syntax - Expression must be [NumberToken, OperatorToken, ...] and end with a NumberToken")
+        }
+
+        for (i in 0..<tokens.size) {
+            if (i % 2 == 0) {
+                if (tokens[i] is OperatorToken) {
+                    throw IllegalStateException("Invalid syntax - Expression must be [NumberToken, OperatorToken, ...] and end with a NumberToken")
+                }
+            } else if (tokens[i] is NumberToken) {
+                throw IllegalStateException("Invalid syntax - Expression must be [NumberToken, OperatorToken, ...] and end with a NumberToken")
+            }
+        }
+    }
+
+    private fun canBeSimplified(expression: List<Token>) = expression.size > 1
+
+    private fun solveHighestPriority(expression: List<Token>): List<Token> {
+        val mutableExpression = expression.toMutableList()
+        var simpleExpressionToSolve: SimpleExpression? = null
+        var firstElementIndex: Int? = null
+
+        println(expression)
+        var i = 0
+        while (i < expression.size - 1) {
+            val n1 = expression[i] as NumberToken
+            val operator = expression[i + 1] as OperatorToken
+            val n2 = expression[i + 2] as NumberToken
+            val newSimpleExpression = SimpleExpression(n1, n2, operator)
+
+            if (simpleExpressionToSolve == null || newSimpleExpression.priority > simpleExpressionToSolve.priority) {
+                firstElementIndex = i
+                simpleExpressionToSolve = newSimpleExpression
+            }
+
+            i += 2
+        }
+
+        mutableExpression[firstElementIndex!!] = NumberToken(simpleExpressionToSolve!!.calculate())
+        mutableExpression.removeAt(firstElementIndex + 1)
+        mutableExpression.removeAt(firstElementIndex + 1)
+
+        return mutableExpression.toList()
+    }
+
+    private fun resultToNumberToken(result: List<Token>): NumberToken =
+        NumberToken((result[0] as NumberToken).value)
 }
 
-data class NumberToken(val number: Int) : Token {
-    override val symbol: String = number.toString()
+open class NumberToken(val value: Int) : Token {
+    override val symbol: String = value.toString()
 }
 
-enum class OperatorToken(override val symbol: String, val exec: (Int, Int) -> Int) : Token {
-    SUM("+", { a, b -> a + b }),
-    SUBTRACT("-", { a, b -> a - b }),
-    DIVIDE("/", { a, b -> a / b }),
-    MULTIPLY("*", { a, b -> a * b }),
+enum class OperatorToken(override val symbol: String, val priority: Int, val exec: (Int, Int) -> Int) : Token {
+    SUM("+", 1, { a, b -> a + b }),
+    SUBTRACT("-", 1, { a, b -> a - b }),
+    DIVIDE("/", 2, { a, b -> a / b }),
+    MULTIPLY("*", 2, { a, b -> a * b }),
     ;
+}
+
+class SimpleExpression(val n1: NumberToken, val n2: NumberToken, val operator: OperatorToken) {
+    val priority: Int
+        get() = operator.priority
+
+    fun calculate() = operator.exec(n1.value, n2.value)
 }
 
 interface Token {
